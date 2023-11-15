@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id             Int       @id @default(autoincrement())
+  registeredName String    @db.VarChar(255)
+  businessName   String?   @db.VarChar(255)
+  addressLine1   String
+  addressLine2   String?
+  addressLine3   String?
+  landmark       String?
+  city           String
+  state          String
+  pincode        String
+  latlong        String?
+  email          String?   @unique() @db.VarChar(255)
+  phone          String?   @unique()
+  Team           Team[]
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt      DateTime? @db.Timestamptz(6)
+}
+
+model Team {
+  id                Int                 @id @default(autoincrement())
+  organizationId    Int
+  organization      Organization        @relation(fields: [organizationId], references: [id])
+  teamName          String
+  UserTeam          UserTeam[]
+  CustomerLeadStage CustomerLeadStage[]
+  createdAt         DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?           @db.Timestamptz(6)
+  TeamCustomerTag   TeamCustomerTag[]
+}
+
+model User {
+  id              Int        @id @default(autoincrement())
+  firstname       String?    @db.VarChar(255)
+  lastname        String?    @db.VarChar(255)
+  email           String?    @unique() @db.VarChar(255)
+  phone           String?
+  hash            String?    @db.VarChar(255)
+  role            Role?
+  active          Boolean    @default(true)
+  google          String?    @unique() @db.VarChar(255)
+  passwordResetAt DateTime?  @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime   @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime?  @db.Timestamptz(6)
+  UserTeam        UserTeam[]
+  AssignedTasks   UserTask[] @relation("user_to_assigned_tasks")
+  DelegatedTasks  UserTask[] @relation("user_to_delegated_tasks")
+
+  CustomerNoteUpdatedBy CustomerNote[]   @relation("user_note_updated_by")
+  CustomerNoteCreatedBy CustomerNote[]   @relation("user_note_created_by")
+  UserAttandance        UserAttandance[]
+}
+
+model UserTeam {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id])
+  userId    Int
+  team      Team      @relation(fields: [teamId], references: [id])
+  teamId    Int
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime? @db.Timestamptz(6)
+}
+
+enum Role {
+  admin
+}
+
+model Customer {
+  id                  Int               @id @default(autoincrement())
+  firstname           String?           @db.VarChar(255)
+  lastname            String?           @db.VarChar(255)
+  phone               String?           @unique()
+  email               String?           @unique() @db.VarChar(255)
+  createdAt           DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt           DateTime?         @db.Timestamptz(6)
+  CustomerAddress     CustomerAddress[]
+  customerLeadStage   CustomerLeadStage @relation(fields: [customerLeadStageId], references: [id])
+  customerLeadStageId Int
+  CustomerNote        CustomerNote[]
+  CustomerTeamTag     CustomerTeamTag[]
+
+  CustomerTaskReminder CustomerTaskReminder[]
+}
+
+model CustomerAddress {
+  id           Int       @id @default(autoincrement())
+  customerId   Int
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  addressLine1 String
+  addressLine2 String?
+  addressLine3 String?
+  landmark     String?
+  city         String
+  state        String
+  pincode      String
+  latlong      String?
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+}
+
+model CustomerLeadStage {
+  id        Int               @id @default(autoincrement())
+  stageName String
+  stageType CustomerStageType
+  team      Team              @relation(fields: [teamId], references: [id])
+  teamId    Int
+  Customer  Customer[]
+  createdAt DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt DateTime?         @db.Timestamptz(6)
+}
+
+enum CustomerStageType {
+  INITIAL
+  INTERMIDIATE
+  FINAL
+}
+
+model UserTask {
+  id           Int            @id @default(autoincrement())
+  taskName     String
+  taskType     String
+  taskStatus   UserTaskStatus @default(PENDING)
+  dueDate      DateTime?
+  assignedBy   User           @relation("user_to_assigned_tasks", fields: [assignedById], references: [id])
+  assignedById Int
+  assignedTo   User?          @relation("user_to_delegated_tasks", fields: [assignedToID], references: [id])
+  assignedToID Int?
+  createdAt    DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime?      @db.Timestamptz(6)
+
+  CustomerTaskReminder CustomerTaskReminder[]
+}
+
+enum UserTaskStatus {
+  PENDING
+  ACTIVE
+  HOLD
+  COMPLETED
+  CANCELLED
+}
+
+// enum UserTaskType {
+//   FIRST_CALL
+//   FOLLOW_UP_CALL
+//   CALLBACK_REQUEST
+//   SITE_VISIT
+//   // todo more
+// }
+
+model CustomerNote {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  description String
+  createdBy   User      @relation("user_note_created_by", fields: [userId], references: [id], map: "user_note_created_by_id")
+  updatedBy   User      @relation("user_note_updated_by", fields: [userId], references: [id], map: "user_note_updated_by_id")
+  customer    Customer  @relation(fields: [customerId], references: [id])
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt   DateTime? @db.Timestamptz(6)
+  userId      Int
+  customerId  Int
+}
+
+model UserAttandance {
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     Int
+  loginTime  DateTime  @default(now()) @db.Timestamptz(6)
+  logoffTime DateTime?
+}
+
+model TeamCustomerTag {
+  id              Int               @id @default(autoincrement())
+  tagName         String            @db.VarChar(255)
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt       DateTime?         @db.Timestamptz(6)
+  bgColor         String
+  textColor       String
+  team            Team              @relation(fields: [teamId], references: [id])
+  teamId          Int
+  CustomerTeamTag CustomerTeamTag[]
+}
+
+model CustomerTeamTag {
+  id                Int             @id @default(autoincrement())
+  teamCustomerTag   TeamCustomerTag @relation(fields: [teamCustomerTagId], references: [id])
+  customer          Customer        @relation(fields: [customerId], references: [id])
+  teamCustomerTagId Int
+  customerId        Int
+  createdAt         DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt         DateTime?       @db.Timestamptz(6)
+}
+
+model CustomerTaskReminder {
+  id                  Int       @id @default(autoincrement())
+  customer            Customer? @relation(fields: [customerId], references: [id])
+  userTask            UserTask? @relation(fields: [userTaskId], references: [id])
+  reminderDescription String?
+  createdAt           DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  deletedAt           DateTime? @db.Timestamptz(6)
+  remindAt            DateTime  @db.Timestamptz(6)
+  customerId          Int?
+  userTaskId          Int?
+}

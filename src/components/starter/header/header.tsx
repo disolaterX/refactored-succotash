@@ -1,43 +1,71 @@
-import { component$ } from "@builder.io/qwik";
-import { QwikLogo } from "../icons/qwik";
-import styles from "./header.module.css";
+import { component$, useSignal, useVisibleTask$ } from "@builder.io/qwik";
+import { Link, useLocation, useNavigate } from "@builder.io/qwik-city";
+import { cn } from "~/libs/utils";
 
 export default component$(() => {
+  const nav = useNavigate();
+  const loc = useLocation();
+
+  const SIDE_NAVAIGATION_ITEMS = [
+    {
+      name: "Home",
+      url: "/",
+    },
+    {
+      name: "Customers",
+      url: "/customers/",
+    },
+    {
+      name: "Team",
+      url: "/team/",
+    },
+  ];
+
   return (
-    <header class={styles.header}>
-      <div class={["container", styles.wrapper]}>
-        <div class={styles.logo}>
-          <a href="/" title="qwik">
-            <QwikLogo height={50} width={143} />
-          </a>
-        </div>
-        <ul>
-          <li>
-            <a
-              href="https://qwik.builder.io/docs/components/overview/"
-              target="_blank"
-            >
-              Docs
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://qwik.builder.io/examples/introduction/hello-world/"
-              target="_blank"
-            >
-              Examples
-            </a>
-          </li>
-          <li>
-            <a
-              href="https://qwik.builder.io/tutorial/welcome/overview/"
-              target="_blank"
-            >
-              Tutorials
-            </a>
-          </li>
+    <div class="drawer w-max lg:drawer-open">
+      <input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col items-center justify-center">
+        <label
+          for="my-drawer-2"
+          class="btn btn-primary drawer-button lg:hidden"
+        >
+          Open drawer
+        </label>
+      </div>
+      <div class="drawer-side">
+        <label
+          for="my-drawer-2"
+          aria-label="close sidebar"
+          class="drawer-overlay"
+        />
+        <ul class="menu min-h-full w-60 gap-2 bg-base-200 p-4 text-base-content">
+          {SIDE_NAVAIGATION_ITEMS.map((route, idx) => {
+            const isActive = loc.url.pathname === route.url;
+            return (
+              <li
+                key={idx}
+                class={
+                  isActive
+                    ? "rounded-lg bg-neutral text-neutral-content hover:cursor-default"
+                    : ""
+                }
+              >
+                <Link
+                  key={idx}
+                  class={
+                    isActive
+                      ? "hover:cursor-default hover:text-neutral-content"
+                      : ""
+                  }
+                  href={route.url}
+                >
+                  {route.name}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
-    </header>
+    </div>
   );
 });

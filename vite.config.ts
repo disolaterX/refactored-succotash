@@ -6,6 +6,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig(() => {
   return {
     plugins: [qwikCity(), qwikVite(), tsconfigPaths()],
+    optimizeDeps: { include: ['@auth/core'] },
     preview: {
       headers: {
         "Cache-Control": "public, max-age=600",
